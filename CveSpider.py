@@ -49,22 +49,21 @@ def resolve_domain(domain):
         sys.exit(1)
 
 # Function to fetch data from Shodan API
-def fetch_shodan_data(ip):
-    if not SHODAN_API_KEY:
-        console.print("[bold red][!] Shodan API key is missing. Skipping Shodan scan.[/bold red]")
-        return {}
-
+def fetch_data(ip):
     url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
     try:
         response = requests.get(url, timeout=10)
-        if response.status_code == 401:
-            console.print("[bold red][!] Invalid Shodan API key. Please check your API key.[/bold red]")
-            return {}
         response.raise_for_status()
         return response.json()
-    except requests.RequestException as e:
-        console.print(f"[bold red][!] Error fetching Shodan data: {e}[/bold red]")
+    except requests.HTTPError as e:
+        if response.status_code == 403:
+            console.print("[bold red][!] Shodan API access denied. Upgrade your plan or check your API key.[/bold red]")
+        elif response.status_code == 401:
+            console.print("[bold red][!] Invalid Shodan API key. Please check your key.[/bold red]")
+        else:
+            console.print(f"[bold red][!] Error fetching Shodan data: {e}[/bold red]")
         return {}
+
 
 # Function to fetch VirusTotal IP Reputation
 def fetch_virustotal_data(ip):
