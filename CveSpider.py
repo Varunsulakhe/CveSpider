@@ -1,10 +1,19 @@
+import os
 import argparse
 import socket
 import requests
 import sys
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from concurrent.futures import ThreadPoolExecutor
+
+# Load environment variables from .env file
+load_dotenv()
+
+SHODAN_API_KEY = os.getenv("SHODAN_API_KEY")
+VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY")
+VULDB_API_KEY = os.getenv("VULDB_API_KEY")
 
 # Initialize Rich Console
 console = Console()
@@ -21,8 +30,12 @@ def banner(output_file=None):
         title="[bold blue]Welcome[/bold blue]",
         border_style="bold magenta"
     )
+
     if output_file:
-        output_file.write(console.capture(lambda: console.print(panel)))
+        with console.capture() as capture:
+            console.print(panel)
+        captured_output = capture.get()
+        output_file.write(captured_output + "\n")  # Write to file
     else:
         console.print(panel)
 
@@ -35,8 +48,6 @@ def resolve_domain(domain):
         sys.exit(1)
 
 # Function to fetch data from Shodan API
-SHODAN_API_KEY = "kUUOHt53SlMG7iqQRzCI77YYQqjZI4rP"
-
 def fetch_data(ip):
     url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
     try:
@@ -48,55 +59,35 @@ def fetch_data(ip):
         return {}
 
 # Function to fetch VirusTotal IP Reputation
-VIRUSTOTAL_API_KEY = "6d5888ce054e504c54d4e75af549137d4f437c8b2ab52ed51f2c9bbab47847e4"
-
 def fetch_virustotal_data(ip):
     url = f"https://www.virustotal.com/api/v3/ip_addresses/{ip}"
-    headers = {
-        "x-apikey": VIRUSTOTAL_API_KEY
-    }
+    headers = {"x-apikey": VIRUSTOTAL_API_KEY}
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
-
-        # Extract reputation data
         stats = data.get("data", {}).get("attributes", {}).get("last_analysis_stats", {})
         malicious = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)
-
         return f"Malicious: {malicious}, Suspicious: {suspicious}", url
     except requests.RequestException as e:
         return f"Error: {str(e)}", url
 
 # Function to fetch CVE base scores from VULNDB API
-
-VULDB_API_KEY = "ad69875a654bcc9d062c4747845f247c"
-
 def get_vuldb_cve(cve_id):
     url = "https://vuldb.com/?api"
-    payload = {
-        "apikey": VULDB_API_KEY,
-        "search": cve_id
-    }
+    payload = {"apikey": VULDB_API_KEY, "search": cve_id}
     try:
         response = requests.post(url, json=payload, timeout=10)
         response.raise_for_status()
         data = response.json()
-        
-        if data.get("result", []) and isinstance(data["result"], list):
+        if "result" in data and isinstance(data["result"], list):
             base_score = data["result"][0].get("cvss", "Not Found")
             return base_score, url
         else:
             return "Not Found", url
     except requests.RequestException as e:
         return f"Error: {str(e)}", url
-
-# Example Usage
-cve_id = "CVE-2023-23397"
-score, link = get_vuldb_cve(cve_id)
-print(f"CVE: {cve_id} | CVSS Score: {score} | {link}")
-
 
 # Function to display CVEs with base scores
 def display_cves(cves, output_file=None):
@@ -105,7 +96,7 @@ def display_cves(cves, output_file=None):
         output += "N/A\n"
     else:
         with ThreadPoolExecutor() as executor:
-            results = list(executor.map(get_base_score, cves))
+            results = list(executor.map(get_vuldb_cve, cves))
         for cve, (base_score, url) in zip(cves, results):
             output += f" -> | {cve} | {base_score} | [link={url}]{url}[/link] |\n"
     
@@ -150,21 +141,10 @@ def main():
     if not target.replace(".", "").isdigit():
         console.print(f"[bold yellow][+] Resolving domain {target} to IP...[bold yellow]")
         target = resolve_domain(target)
-        console.print(f"[bold green][+] Resolved IP: {target}[bold green]")
     
-    console.print(f"[bold cyan][+] Fetching data for IP: {target}...[bold cyan]")
     data = fetch_data(target)
-
-    # Fetch VirusTotal Data
     vt_result, vt_url = fetch_virustotal_data(target)
     console.print(f"\n[bold green]VirusTotal Report:[/bold green] {vt_result} | [link={vt_url}]{vt_url}[/link]")
-    
-    display_hostnames(data.get("hostnames", []), output_file)
-    display_ports(data.get("ports", []), output_file)
-    display_cves(data.get("vulns", []), output_file)
-    
-    if output_file:
-        output_file.close()
 
 if __name__ == "__main__":
     main()
