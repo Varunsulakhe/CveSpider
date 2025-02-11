@@ -112,7 +112,7 @@ def main():
     console.print(f"[bold cyan][+] Fetching data for IP: {target}...[bold cyan]")
     
     # Fetch data from Shodan
-    shodan_data = fetch_shodan_data(target)
+    shodan_data = fetch_data(target)
     
     # Fetch VirusTotal Data
     vt_result, vt_url = fetch_virustotal_data(target)
