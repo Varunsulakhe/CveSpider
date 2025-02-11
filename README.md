@@ -22,15 +22,15 @@ This tool is designed to help security researchers and bug bounty hunters easily
 ## Example Usage
 ### Scan by Domain
 ```
-python cve_spider.py -d example.com -o result.txt
+python CveSpider.py -d example.com -o result.txt
 ```
 ### Scan by IP
 ```
-python cve_spider.py -d 192.168.1.1 -o result.txt
+python CveSpider.py -d 192.168.1.1 -o result.txt
 ```
 ### Pipe Input to Scan
 ```
-echo "example.com" | python cve_spider.py -o result.txt
+echo "example.com" | python CveSpider.py -o result.txt
 ```
 
 
