@@ -18,7 +18,7 @@ console = Console()
 # Function to display a fancy banner
 def banner(output_file=None):
     banner_text = "[bold green]CVE Spidering Tool[/bold green]\n" \
-                  "[bold yellow]Author:[/bold yellow] Fusion Security\n" \
+                  "[bold yellow]Author:[/bold yellow] IamGr000t\n" \
                   "[bold cyan]Hunting CVEs Made Easy[/bold cyan]"
     panel = Panel.fit(
         banner_text,
