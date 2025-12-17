@@ -14,7 +14,7 @@ This tool is designed to help security researchers and bug bounty hunters easily
 
 1. Clone the repository to your local machine:
    ```bash
-   git clone https://github.com/varunsulakhe/cve-spidering-tool.git
+   git clone https://github.com/varunsulakhe/CveSpider.git
    cd CveSpider
    pip install -r requirements.txt
    Python3 CveSpider.py -d example.com
@@ -35,3 +35,4 @@ echo "example.com" | python CveSpider.py -o result.txt
 
 
 ![Alt Text](https://raw.githubusercontent.com/mr-kasim-mehar/myimgs/refs/heads/main/my.gif)
+
